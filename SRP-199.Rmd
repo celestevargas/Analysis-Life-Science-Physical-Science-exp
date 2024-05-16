@@ -1,0 +1,756 @@
+---
+title: "SRP-199"
+author: "Celeste Vargas (305395537)"
+date: "2023-03-15"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# I. Downloading and Cleaning Data
+```{r}
+data <- read.csv("C://SRP//AAP 2021-2022 Annual Survey, merged with membership data, deidentified.csv")
+```
+
+```{r}
+#head(data)
+#colnames(data)
+#View(data)
+library(haven)
+library(tidyverse)
+library(broom)
+library(pander)
+data <- read_sav("C://SRP//AAP 2021-2022 Annual Survey cleaned, merged with membership data, FTSP var, S22TermGPA, deidentified.sav")
+View(data)
+```
+```{r}
+dim(data)
+```
+
+```{r}
+unique(data$majorName)
+
+life_sci <- c("Psychobiology", "Pre Psychobiology", "Neuroscience",
+              "Molecular, Cell, and Developmental Biology", 
+              "Microbiology,Immunology&Molecular Genetics", "Marine Biology", "Biology", "Physiological Science"
+              , "Human Biology and Society (BS)", "Cognitive Science", 
+              "Pre Cognitive Science", "Ecology,Behavior,and Evolution", 
+              "Environmental Science", "Pre Human Biology and Society (BS)",
+              "Linguistics and Psychology", "Geography/Environmental Studies", 
+              "Precomputational and Systems Biology", 
+              "Computational and Systems Biology", 
+              "Pre Human Biology and Society", "Psychology", "Pre Psychology")
+
+phy_sci <- c("Applied Mathematics", "Pre Mathematics", "Pre-Data Theory", 
+             "Mathematics of Computation", "Pre Mathematics/Economics", 
+             "Biochemistry", "Mathematics for Teaching", 
+             "Pre Mathematics/Economics", "Astrophysics", 
+             "Statistics", "Chemistry", "Biophysics", 
+             "Atmospheric and Oceanic Sciences", "Pre Statistics", 
+             "Pre Applied Mathematics")
+```
+
+# II. Basic Stats of Data and Creation of Data Sets
+```{r}
+life_science <- data[data$majorName %in% life_sci,]
+
+physical_science <- data[data$majorName %in% phy_sci,]
+
+```
+
+```{r}
+write.csv(life_science, "life_sci.csv")
+write.csv(physical_science, "phy_sci.csv")
+```
+
+```{r}
+dim(life_science)
+dim(physical_science)
+```
+
+
+#Finding n's
+```{r}
+one <- life_science %>% count(SelfDoubt_Re_Ability) %>% as_factor()
+two <- life_science %>% count(SelfConfidence_in_Academics)
+three <- life_science %>% count(Sense_of_Belonging)
+seven <- life_science %>% count(AAP_21_22_utilize1)
+
+four <- physical_science %>% count(SelfDoubt_Re_Ability)
+five <- physical_science %>% count(SelfConfidence_in_Academics)
+six <-  physical_science %>% count(Sense_of_Belonging)
+eight <- physical_science %>% count(AAP_21_22_utilize1)
+
+
+n_function <- function(n){
+  
+  last_number <- length(n$n)
+  na <- n$n[last_number]
+  
+  the_sum <- sum(n$n[-last_number])
+  
+  my_data_frame <- data.frame(n = the_sum, na = na)
+  
+  my_data_frame
+  
+}
+
+n_function(one)
+n_function(two)
+n_function(three)
+n_function(seven)
+
+n_function(four)
+n_function(five)
+n_function(six)
+n_function(eight)
+
+dim(life_science)
+dim(physical_science)
+
+
+```
+
+```{r}
+life_science %>% count(majorName) %>% as_factor()
+
+physical_science %>% count(majorName) %>% as_factor()
+
+life_science %>% count(degreeExpectedTerm) %>% as_factor()
+physical_science %>% count(degreeExpectedTerm) %>% as_factor()
+
+life_science %>% count(gender_recoded) %>% as_factor()
+physical_science %>% count(gender_recoded)
+
+life_science %>% count(gender) %>% as_factor()
+physical_science %>% count(gender)  %>% as_factor()
+
+life_science %>% count(academic_status) %>% as_factor()
+physical_science %>% count(academic_status) %>% as_factor()
+
+life_science %>% count(AAP_21_22_utilize1) %>% as_factor()
+physical_science %>% count(AAP_21_22_utilize1) %>% as_factor()
+```
+```{r}
+life_sci_lower <- life_science[life_science$degreeExpectedTerm %in% c("24S", "25S"),]
+phy_sci_lower <- physical_science[physical_science$degreeExpectedTerm %in% c("24S", "25S"),]
+```
+
+
+```{r}
+hist(life_science$SelfDoubt_Re_Ability)
+hist(life_science$SelfConfidence_in_Academics)
+hist((life_science$Sense_of_Belonging))
+
+shapiro.test(life_science$SelfDoubt_Re_Ability)
+shapiro.test(life_science$SelfConfidence_in_Academics)
+shapiro.test((life_science$Sense_of_Belonging))
+
+
+
+```
+```{r}
+hist(physical_science$SelfDoubt_Re_Ability)
+hist(physical_science$SelfConfidence_in_Academics)
+hist(physical_science$Sense_of_Belonging)
+
+shapiro.test(physical_science$SelfDoubt_Re_Ability)
+shapiro.test(physical_science$SelfConfidence_in_Academics)
+shapiro.test(physical_science$Sense_of_Belonging)
+```
+
+
+
+```{r}
+wilcox.test(life_science$SelfDoubt_Re_Ability, physical_science$SelfDoubt_Re_Ability)
+wilcox.test(life_science$SelfConfidence_in_Academics, physical_science$SelfConfidence_in_Academics)
+wilcox.test(life_science$Sense_of_Belonging, physical_science$Sense_of_Belonging)
+
+# table1 <- tidy(t_test1)
+# pander(t_test1)
+# 
+# table2 <- tidy(t_test2)
+# pander(t_test2)
+# 
+# table3 <- tidy(t_test3)
+# pander(t_test3)
+```
+
+```{r}
+life_science %>%
+  summarise(median = median(life_science$SelfConfidence_in_Academics, na.rm = TRUE),
+            quantile = IQR(life_science$SelfConfidence_in_Academics, na.rm = TRUE))
+
+life_science %>%
+  summarise(median = median(life_science$SelfDoubt_Re_Ability, na.rm = TRUE),
+            quantile = IQR(life_science$SelfDoubt_Re_Ability, na.rm = TRUE))
+life_science %>%
+  summarise(median = median(life_science$Sense_of_Belonging, na.rm = TRUE),
+            quantile = IQR(life_science$Sense_of_Belonging, na.rm = TRUE))
+
+physical_science %>%
+  summarise(median = median(physical_science$SelfDoubt_Re_Ability, na.rm = TRUE),
+            quantile = IQR(physical_science$SelfDoubt_Re_Ability, na.rm = TRUE))
+
+physical_science %>%
+  summarise(median = median(physical_science$SelfConfidence_in_Academics, na.rm = TRUE),
+            quantile = IQR(physical_science$SelfConfidence_in_Academics, na.rm = TRUE))
+
+physical_science %>%
+  summarise(median = median(physical_science$Sense_of_Belonging, na.rm = TRUE),
+            quantile = IQR(physical_science$Sense_of_Belonging, na.rm = TRUE))
+
+#-----------------------------------------------------------------------------------------
+fem_life_sci %>%
+  summarise(median = median(fem_life_sci$SelfConfidence_in_Academics, na.rm = TRUE),
+            quantile = IQR(fem_life_sci$SelfConfidence_in_Academics, na.rm = TRUE))
+
+fem_life_sci %>%
+  summarise(median = median(fem_life_sci$SelfDoubt_Re_Ability, na.rm = TRUE),
+            quantile = IQR(fem_life_sci$SelfDoubt_Re_Ability, na.rm = TRUE))
+fem_life_sci %>%
+  summarise(median = median(fem_life_sci$Sense_of_Belonging, na.rm = TRUE),
+            quantile = IQR(fem_life_sci$Sense_of_Belonging, na.rm = TRUE))
+
+
+fem_phy_sci %>%
+  summarise(median = median(fem_phy_sci$SelfConfidence_in_Academics, na.rm = TRUE),
+            quantile = IQR(fem_phy_sci$SelfConfidence_in_Academics, na.rm = TRUE))
+
+fem_phy_sci %>%
+  summarise(median = median(fem_phy_sci$SelfDoubt_Re_Ability, na.rm = TRUE),
+            quantile = IQR(fem_phy_sci$SelfDoubt_Re_Ability, na.rm = TRUE))
+fem_phy_sci %>%
+  summarise(median = median(fem_phy_sci$Sense_of_Belonging, na.rm = TRUE),
+            quantile = IQR(fem_phy_sci$Sense_of_Belonging, na.rm = TRUE))
+
+
+#------------------------------------------------------------------------------------
+
+male_life_sci %>%
+  summarise(median = median(male_life_sci$SelfConfidence_in_Academics, na.rm = TRUE),
+            quantile = IQR(male_life_sci$SelfConfidence_in_Academics, na.rm = TRUE))
+
+male_life_sci %>%
+  summarise(median = median(male_life_sci$SelfDoubt_Re_Ability, na.rm = TRUE),
+            quantile = IQR(male_life_sci$SelfDoubt_Re_Ability, na.rm = TRUE))
+male_life_sci %>%
+  summarise(median = median(male_life_sci$Sense_of_Belonging, na.rm = TRUE),
+            quantile = IQR(male_life_sci$Sense_of_Belonging, na.rm = TRUE))
+
+male_phy_sci %>%
+  summarise(median = median(male_phy_sci$SelfConfidence_in_Academics, na.rm = TRUE),
+            quantile = IQR(male_phy_sci$SelfConfidence_in_Academics, na.rm = TRUE))
+
+male_phy_sci %>%
+  summarise(median = median(male_phy_sci$SelfDoubt_Re_Ability, na.rm = TRUE),
+            quantile = IQR(fem_phy_sci$SelfDoubt_Re_Ability, na.rm = TRUE))
+male_phy_sci %>%
+  summarise(median = median(male_phy_sci$Sense_of_Belonging, na.rm = TRUE),
+            quantile = IQR(fem_phy_sci$Sense_of_Belonging, na.rm = TRUE))
+
+```
+
+
+```{r}
+mean(physical_science$TermGPA, na.rm = TRUE)
+mean(life_science$TermGPA, na.rm = TRUE)
+```
+```{r}
+ggplot(life_science, aes(x = AAP_21_22_utilize1)) +
+geom_bar(color = "blue", fill = "blue") +
+  xlab("PLF Utiization Levels (N = 216)") +
+  ylab("Count of PLF Utilization") +
+  ggtitle("PLF Utilization - Life Sciences") 
+ggplot(physical_science, aes(x = AAP_21_22_utilize1)) +
+geom_bar(color = "lightblue", fill = "lightblue") +
+  xlab("PLF Utilization Levels (N = 38)") +
+  ylab("Count of PLF Utilization") +
+  ggtitle("PLF Utilization - Physical Sciences") 
+```
+
+
+```{r}
+
+
+life_lower <- life_sci_lower[life_sci_lower$academic_status == 1,]
+
+phy_lower <- phy_sci_lower[phy_sci_lower$academic_status == 1,]
+
+dim(life_lower)
+dim(phy_lower)
+```
+
+
+
+```{r}
+ggplot(life_lower, aes(x = AAP_21_22_utilize1)) +
+geom_bar(color = "blue", fill = "blue") +
+  xlab("PLF Utiization Levels (N = 108)") +
+  ylab("Count of PLF Utilization") +
+  ggtitle("PLF Utilization - Life Sciences (C/O 24S, 25S)") 
+
+ggplot(phy_lower, aes(x = AAP_21_22_utilize1)) +
+geom_bar(color = "lightblue", fill = "lightblue") +
+  xlab("PLF Utilization Levels (N = 18)") +
+  ylab("Count of PLF Utilization") +
+  ggtitle("PLF Utilization - Physical Sciences (C/O 24S, 25S)") 
+```
+
+
+
+
+
+```{r}
+plot(physical_science$Sense_of_Belonging, physical_science$TermGPA)
+plot(life_science$Sense_of_Belonging, life_science$TermGPA)
+
+plot(physical_science$SelfDoubt_Re_Ability, physical_science$TermGPA)
+plot(life_science$SelfDoubt_Re_Ability, life_science$TermGPA)
+
+plot(physical_science$SelfConfidence_in_Academics, physical_science$TermGPA)
+plot(life_science$SelfConfidence_in_Academics, life_science$TermGPA)
+
+```
+
+
+
+```{r}
+library(car)
+```
+
+
+```{r}
+reg <- lm(physical_science$TermGPA ~ physical_science$Sense_of_Belonging + physical_science$SelfConfidence_in_Academics + physical_science$SelfDoubt_Re_Ability + physical_science$gender + physical_science$SelfEsteem_mean + physical_science$degreeExpectedTerm)
+
+#summary(reg)
+pander(reg)
+avPlots(reg)
+```
+
+
+```{r}
+reg2 <- lm(life_science$TermGPA ~ life_science$Sense_of_Belonging + life_science$SelfConfidence_in_Academics + life_science$SelfDoubt_Re_Ability + life_science$gender + life_science$SelfEsteem_mean + life_science$degreeExpectedTerm)
+
+#summary(reg2)
+pander(reg2)
+avPlots(reg2)
+```
+
+
+## Females and Males
+```{r}
+fem_life_sci <- life_science[life_science$gender == 1,]
+male_life_sci <- life_science[life_science$gender == 2,]
+
+fem_phy_sci <- physical_science[physical_science$gender == 1,]
+male_phy_sci <- physical_science[physical_science$gender == 2,]
+```
+
+```{r}
+dim(fem_life_sci)
+dim(male_life_sci)
+
+dim(male_phy_sci)
+dim(fem_phy_sci)
+```
+
+
+
+```{r}
+shapiro.test(fem_life_sci$SelfDoubt_Re_Ability)
+shapiro.test(male_life_sci$SelfDoubt_Re_Ability)
+
+shapiro.test(fem_life_sci$SelfConfidence_in_Academics)
+shapiro.test(male_life_sci$SelfConfidence_in_Academics)
+
+shapiro.test(fem_life_sci$Sense_of_Belonging)
+shapiro.test(male_life_sci$Sense_of_Belonging)
+```
+
+```{r}
+hist(fem_life_sci$SelfDoubt_Re_Ability)
+hist(male_life_sci$SelfDoubt_Re_Ability)
+
+hist(fem_life_sci$SelfConfidence_in_Academics)
+hist(male_life_sci$SelfConfidence_in_Academics)
+
+hist(fem_life_sci$Sense_of_Belonging)
+hist(male_life_sci$Sense_of_Belonging)
+
+hist(fem_phy_sci$SelfDoubt_Re_Ability)
+hist(male_phy_sci$SelfDoubt_Re_Ability)
+
+hist(fem_phy_sci$SelfConfidence_in_Academics)
+hist(male_phy_sci$SelfConfidence_in_Academics)
+
+hist(fem_phy_sci$Sense_of_Belonging)
+hist(male_phy_sci$Sense_of_Belonging)
+
+shapiro.test(fem_phy_sci$SelfDoubt_Re_Ability)
+shapiro.test(sqrt(male_phy_sci$SelfDoubt_Re_Ability))
+
+shapiro.test(sqrt(fem_phy_sci$SelfConfidence_in_Academics))
+shapiro.test(male_phy_sci$SelfConfidence_in_Academics)
+
+shapiro.test(fem_phy_sci$Sense_of_Belonging)
+shapiro.test(male_phy_sci$Sense_of_Belonging)
+
+```
+
+## t-test
+```{r}
+sd(fem_life_sci$SelfDoubt_Re_Ability, na.rm = TRUE)
+sd(male_life_sci$SelfDoubt_Re_Ability, na.rm = TRUE)
+
+sd(fem_life_sci$SelfConfidence_in_Academics, na.rm = TRUE)
+sd(male_life_sci$SelfConfidence_in_Academics, na.rm = TRUE)
+
+
+sd(fem_life_sci$Sense_of_Belonging, na.rm = TRUE)
+sd(male_life_sci$Sense_of_Belonging, na.rm = TRUE)
+
+
+sd(fem_phy_sci$SelfDoubt_Re_Ability, na.rm = TRUE)
+sd(male_phy_sci$SelfDoubt_Re_Ability, na.rm = TRUE)
+
+sd(fem_phy_sci$SelfConfidence_in_Academics, na.rm = TRUE)
+sd(male_phy_sci$SelfConfidence_in_Academics, na.rm = TRUE)
+
+sd(fem_phy_sci$Sense_of_Belonging, na.rm = TRUE)
+sd(male_phy_sci$Sense_of_Belonging, na.rm = TRUE)
+
+
+sd(life_science$SelfDoubt_Re_Ability, na.rm = TRUE)
+sd(physical_science$SelfDoubt_Re_Ability, na.rm = TRUE)
+
+sd(life_science$SelfConfidence_in_Academics, na.rm = TRUE)
+sd(physical_science$SelfConfidence_in_Academics, na.rm = TRUE)
+
+sd(life_science$Sense_of_Belonging, na.rm = TRUE)
+sd(physical_science$Sense_of_Belonging, na.rm = TRUE)
+
+
+wilcox.test(fem_life_sci$SelfDoubt_Re_Ability, male_life_sci$SelfDoubt_Re_Ability)
+wilcox.test(fem_life_sci$SelfConfidence_in_Academics, male_life_sci$SelfConfidence_in_Academics)
+wilcox.test(fem_life_sci$Sense_of_Belonging, male_life_sci$Sense_of_Belonging)
+
+# table4 <- tidy(t_test4)
+# pander(table4)
+# 
+# table5 <- tidy(t_test5)
+# pander(table5)
+# 
+# table6 <- tidy(t_test6)
+# pander(table6)
+```
+
+
+```{r}
+wilcox.test(fem_phy_sci$SelfDoubt_Re_Ability, male_phy_sci$SelfDoubt_Re_Ability, exact = FALSE)
+wilcox.test(fem_phy_sci$SelfConfidence_in_Academics, male_phy_sci$SelfConfidence_in_Academics)
+wilcox.test(fem_phy_sci$Sense_of_Belonging, male_phy_sci$Sense_of_Belonging)
+
+# table7 <- tidy(t_test7)
+# pander(table7)
+# table8 <- tidy(t_test8)
+# pander(table8)
+# table9 <- tidy(t_test9)
+# pander(table9)
+```
+
+
+```{r}
+wilcox.test(fem_life_sci$SelfDoubt_Re_Ability, fem_phy_sci$SelfDoubt_Re_Ability)
+wilcox.test(fem_life_sci$SelfConfidence_in_Academics, fem_phy_sci$SelfConfidence_in_Academics)
+wilcox.test(fem_life_sci$Sense_of_Belonging, fem_phy_sci$Sense_of_Belonging)
+
+# table10 <- tidy(t_test10)
+# pander(table10)
+# 
+# table11 <- tidy(t_test11)
+# pander(table11)
+# 
+# table12 <- tidy(t_test12)
+# pander(table12)
+```
+
+```{r}
+wilcox.test(male_life_sci$SelfDoubt_Re_Ability, male_phy_sci$SelfDoubt_Re_Ability)
+wilcox.test(male_life_sci$SelfConfidence_in_Academics, male_phy_sci$SelfConfidence_in_Academics)
+wilcox.test(male_life_sci$Sense_of_Belonging, male_phy_sci$Sense_of_Belonging)
+
+# table13 <- tidy(t_test13)
+# pander(table13)
+# 
+# table14 <- tidy(t_test14)
+# pander(table14)
+# 
+# table15 <- tidy(t_test15)
+# pander(t_test15)
+```
+
+
+
+```{r}
+library(ggpubr)
+
+ggplot(life_science, aes(x = SelfDoubt_Re_Ability, y = TermGPA)) + 
+  geom_point(size = 3, shape = 21, color = "black", fill = "blue") + 
+  stat_cor(p.accuracy = 0.001, r.accuracy = 0.01, label.x.npc = "left",
+  label.y.npc = "bottom")
+
+ggplot(life_science, aes(x = SelfConfidence_in_Academics, y = TermGPA)) + 
+  geom_point(size = 3, shape = 21, color = "black", fill = "blue") + 
+  stat_cor(p.accuracy = 0.001, r.accuracy = 0.01,label.x.npc = "left",
+  label.y.npc = "bottom")
+
+ggplot(life_science, aes(x = Sense_of_Belonging, y = TermGPA)) + 
+  geom_point(size = 3, shape = 21, color = "black", fill = "blue") + 
+  stat_cor(p.accuracy = 0.001, r.accuracy = 0.01, label.x.npc = "left",
+  label.y.npc = "bottom")
+```
+
+
+### Samples are very small for the physical science students, so it makes sense that the correlations are non significant.
+```{r}
+ggplot(physical_science, aes(x = SelfDoubt_Re_Ability, y = TermGPA)) + 
+  geom_point(size = 3, shape = 21, color = "black", fill = "blue") + 
+  stat_cor(p.accuracy = 0.001, r.accuracy = 0.01, label.x.npc = "left",
+  label.y.npc = "bottom")
+
+ggplot(physical_science, aes(x = SelfConfidence_in_Academics, y = TermGPA)) + 
+  geom_point(size = 3, shape = 21, color = "black", fill = "blue") + 
+  stat_cor(p.accuracy = 0.001, r.accuracy = 0.01,label.x.npc = "left",
+  label.y.npc = "bottom")
+
+ggplot(physical_science, aes(x = Sense_of_Belonging, y = TermGPA)) + 
+  geom_point(size = 3, shape = 21, color = "black", fill = "blue") + 
+  stat_cor(p.accuracy = 0.001, r.accuracy = 0.01, label.x.npc = "left",
+  label.y.npc = "bottom")
+```
+### MEAN PLOTS
+
+### FEM LIFE SCI 
+```{r}
+ggplot(fem_life_sci, aes(x = SelfConfidence_in_Academics, y = factor(0))) +
+  geom_boxplot(alpha = 0.7, fill = "blue") +
+  stat_summary(fun.y = mean)+
+  labs(y="Female", x = "Self Confidence in Academics")
+ # geom_bar(data = fem_phy_sci, aes(x = mean(SelfDoubt_Re_Ability)), fun.y = "mean", na.rm = TRUE)
+```
+```{r}
+ggplot(fem_life_sci, aes(x = SelfDoubt_Re_Ability, y = factor(0))) +
+  geom_boxplot(alpha = 0.7, fill = "blue") +
+  stat_summary(fun.y = mean)+
+  labs(y="Female", x = "Self Doubt in Academics")
+
+```
+```{r}
+ggplot(fem_life_sci, aes(x = Sense_of_Belonging, y = factor(0))) +
+  geom_boxplot(alpha = 0.7, fill = "blue") +
+  stat_summary(fun.y = mean) +
+  labs(y="Female", x = "Sense of Belonging")
+```
+
+### fem physical science
+```{r}
+ggplot(fem_phy_sci, aes(x = SelfDoubt_Re_Ability, y = factor(0))) +
+  geom_boxplot(alpha = 0.7, fill = "light blue") +
+  stat_summary(fun.y = mean)+
+  labs(y="Female", x = "Self Doubt in Academics")
+```
+
+```{r}
+ggplot(fem_phy_sci, aes(x = SelfConfidence_in_Academics, y = factor(0))) +
+  geom_boxplot(alpha = 0.7, fill = "light blue") +
+  stat_summary(fun.y = mean) +
+  labs(y="Female", x = "Self Confidence in Academics")
+```
+
+```{r}
+ggplot(fem_phy_sci, aes(x = Sense_of_Belonging, y = factor(0))) +
+  geom_boxplot(alpha = 0.7, fill = "light blue") +
+  stat_summary(fun.y = mean) +
+  labs(y="Female", x = "Sense of Belonging")
+```
+
+
+
+### male life sci
+```{r}
+ggplot(male_life_sci, aes(x = SelfDoubt_Re_Ability, y = factor(0))) +
+  geom_boxplot(alpha = 0.7, fill = "blue") +
+  stat_summary(fun.y = mean) +
+  labs(y="Male", x = "Self Doubt in Academics")
+```
+
+```{r}
+ggplot(male_life_sci, aes(x = SelfConfidence_in_Academics, y = factor(0))) +
+  geom_boxplot(alpha = 0.7, fill = "blue") +
+  stat_summary(fun.y = mean) +
+  labs(y="Male", x = "Self Confidence in Academics")
+```
+
+```{r}
+ggplot(male_life_sci, aes(x = Sense_of_Belonging, y = factor(0))) +
+  geom_boxplot(alpha = 0.7, fill = "blue") +
+  stat_summary(fun.y = mean) +
+  labs(y="Male", x = "Sense of Belonging")
+```
+### male phy sci
+```{r}
+ggplot(male_phy_sci, aes(x = SelfDoubt_Re_Ability, y = factor(0))) +
+  geom_boxplot(alpha = 0.7, fill = "light blue") +
+  stat_summary(fun.y = mean) +
+  labs(y="Male", x = "Self Doubt in Academics")
+```
+
+```{r}
+ggplot(male_phy_sci, aes(x = SelfConfidence_in_Academics, y = factor(0))) +
+  geom_boxplot(alpha = 0.7, fill = "light blue") +
+  stat_summary(fun.y = mean) +
+  labs(y="Male", x = "Self Confidence in Academics")
+```
+
+```{r}
+ggplot(male_phy_sci, aes(x = Sense_of_Belonging, y = factor(0))) +
+  geom_boxplot(alpha = 0.7, fill = "light blue") +
+  stat_summary(fun.y = mean) +
+  labs(y="Male", x = "Sense of Belonging")
+```
+
+
+### life sci
+```{r}
+ggplot(life_science, aes(x = SelfDoubt_Re_Ability, y = factor(0))) +
+  geom_boxplot(alpha = 0.7, fill = "blue") +
+  stat_summary(fun.y = mean) +
+  labs(y="Life Science", x = "Self Doubt in Academics")
+```
+```{r}
+ggplot(life_science, aes(x = SelfConfidence_in_Academics, y = factor(0))) +
+  geom_boxplot(alpha = 0.7, fill = "blue") +
+  stat_summary(fun.y = mean) +
+  labs(y="Life Science", x = "Self Confidence in Academics")
+```
+
+```{r}
+ggplot(life_science, aes(x = Sense_of_Belonging, y = factor(0))) +
+  geom_boxplot(alpha = 0.7, fill = "blue") +
+  stat_summary(fun.y = mean) +
+  labs(y="Life Science", x = "Sense of Belonging")
+```
+
+
+### physical sci
+```{r}
+ggplot(physical_science, aes(x = SelfDoubt_Re_Ability, y = factor(0))) +
+  geom_boxplot(alpha = 0.7, fill = "light blue") +
+  stat_summary(fun.y = mean) +
+  labs(y="Physical Science", x = "Self Doubt in Academics")
+```
+
+```{r}
+ggplot(physical_science, aes(x = SelfConfidence_in_Academics, y = factor(0))) +
+  geom_boxplot(alpha = 0.7, fill = "light blue") +
+  stat_summary(fun.y = mean) +
+  labs(y="Physical Science", x = "Self Confidence in Academics")
+```
+
+```{r}
+ggplot(physical_science, aes(x = Sense_of_Belonging, y = factor(0))) +
+  geom_boxplot(alpha = 0.7, fill = "light blue") +
+  stat_summary(fun.y = mean) +
+  labs(y="Physical Science", x = "Sense of Belonging")
+```
+
+
+### physical sci male vs fem
+```{r}
+ggplot(physical_science, aes( x = factor(gender), y = SelfDoubt_Re_Ability)) +
+  geom_boxplot(alpha = 0.7, fill = "light blue") +
+  stat_summary(fun.y = mean) +
+  labs(y="Self Doubt in Academics", x = "Gender")
+```
+```{r}
+ggplot(physical_science, aes( x = factor(gender), y = SelfConfidence_in_Academics)) +
+  geom_boxplot(alpha = 0.7, fill = "light blue") +
+  stat_summary(fun.y = mean) +
+  labs(y="Self Confidence in Academics", x = "Gender")
+```
+
+```{r}
+ggplot(physical_science, aes( x = factor(gender), y = Sense_of_Belonging)) +
+  geom_boxplot(alpha = 0.7, fill = "light blue") +
+  stat_summary(fun.y = mean) +
+  labs(y="Sense of Belonging", x = "Gender")
+```
+
+
+#life sci male vs fem
+```{r}
+ggplot(life_science, aes( x = factor(gender), y = SelfDoubt_Re_Ability)) +
+  geom_boxplot(alpha = 0.7, fill = "blue") +
+  stat_summary(fun.y = mean) +
+  labs(y="Self Doubt in Academics", x = "Gender")
+```
+```{r}
+ggplot(life_science, aes( x = factor(gender), y = SelfConfidence_in_Academics)) +
+  geom_boxplot(alpha = 0.7, fill = "blue") +
+  stat_summary(fun.y = mean) +
+  labs(y="Self Confidence in Academics", x = "Gender")
+```
+
+```{r}
+ggplot(life_science, aes( x = factor(gender), y = Sense_of_Belonging)) +
+  geom_boxplot(alpha = 0.7, fill = "blue") +
+  stat_summary(fun.y = mean) +
+  labs(y="Sense of Belonging", x = "Gender")
+```
+
+```{r}
+fem1 <- fem_life_sci %>% count(SelfDoubt_Re_Ability) %>% as_factor()
+fem2 <- fem_life_sci %>% count(SelfConfidence_in_Academics)
+fem3 <- fem_life_sci %>% count(Sense_of_Belonging)
+
+n_function(fem1)
+n_function(fem2)
+n_function(fem3)
+
+fem4 <- fem_phy_sci %>% count(SelfDoubt_Re_Ability) %>% as_factor()
+fem5 <- fem_phy_sci %>% count(SelfConfidence_in_Academics)
+fem6 <- fem_phy_sci %>% count(Sense_of_Belonging)
+
+n_function(fem4)
+n_function(fem5)
+n_function(fem6)
+
+```
+
+
+
+```{r}
+m1 <- male_life_sci %>% count(SelfDoubt_Re_Ability) %>% as_factor()
+m2 <- male_life_sci %>% count(SelfConfidence_in_Academics)
+m3 <- male_life_sci %>% count(Sense_of_Belonging)
+
+n_function(m1)
+n_function(m2)
+n_function(m3)
+
+m4 <- male_phy_sci %>% count(SelfDoubt_Re_Ability) %>% as_factor()
+m5 <- male_phy_sci %>% count(SelfConfidence_in_Academics)
+m6 <- male_phy_sci %>% count(Sense_of_Belonging)
+
+n_function(m4)
+n_function(m5)
+n_function(m6)
+```
+
+```{r}
+chisq.test(life_science$SelfDoubt_Re_Ability, physical_science$SelfDoubt_Re_Ability)
+```
+
